@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_1_3/models/user_model.dart';
-import 'package:flutter_firebase_1_3/pages/contact_page.dart';
+import 'package:flutter_firebase_1_3/pages/create_contact_page.dart';
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {

@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 class ContactPage extends StatefulWidget {
   const ContactPage({Key? key}) : super(key: key);
@@ -15,7 +17,7 @@ class _ContactPageState extends State<ContactPage> {
   var _phoneController = TextEditingController();
   var _addressController = TextEditingController();
 
-  // ----- Image-------
+  // ---------- Image ----------
   File? _image;
   final _picker = ImagePicker();
   _fromGallery() async {
@@ -98,11 +100,62 @@ class _ContactPageState extends State<ContactPage> {
     );
   }
 
+//--------------------------
+  Future<void> _buildDialog(String message) async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Message'),
+          content: Container(
+            child: Text(message),
+          ),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  CollectionReference _contact =
+      FirebaseFirestore.instance.collection('contact');
+  Future<String> _addContact() async {
+    await firebase_storage.FirebaseStorage.instance
+        .ref('upload/${_image!.path.split("/").last}')
+        .putFile(_image!);
+    String downloadURL = await firebase_storage.FirebaseStorage.instance
+        .ref('upload/${_image!.path.split("/").last}')
+        .getDownloadURL();
+    print("URL : $downloadURL");
+    return _contact
+        .add({
+          'name': _nameController.text,
+          'phone': _phoneController.text,
+          'address': _addressController.text,
+          'url': downloadURL
+        })
+        .then((value) => 'Data has been submited!')
+        .catchError((error) => 'Failed to add user: $error');
+  }
+
+  Future<void> _submit() async {
+    String dataFeedback = await _addContact();
+    if (dataFeedback.isNotEmpty) {
+      _buildDialog(dataFeedback);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Contact'),
+        title: Text('Create Contact'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -115,6 +168,7 @@ class _ContactPageState extends State<ContactPage> {
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.person),
                   border: OutlineInputBorder(),
                   hintText: 'Name',
                 ),
@@ -123,6 +177,7 @@ class _ContactPageState extends State<ContactPage> {
               TextField(
                 controller: _phoneController,
                 decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.call),
                   border: OutlineInputBorder(),
                   hintText: 'Phone',
                 ),
@@ -131,16 +186,29 @@ class _ContactPageState extends State<ContactPage> {
               TextField(
                 controller: _addressController,
                 decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.location_on),
                   border: OutlineInputBorder(),
                   hintText: 'Address',
                 ),
               ),
               SizedBox(height: 16.0),
-              OutlinedButton(
-                onPressed: () {
-                  //
-                },
-                child: Text('SUBMIT'),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(5.0),
+                ),
+                height: 60.0,
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    //
+                    _submit();
+                  },
+                  child: Text(
+                    'SUBMIT',
+                    style: TextStyle(fontSize: 20, color: Colors.white),
+                  ),
+                ),
               ),
             ],
           ),
